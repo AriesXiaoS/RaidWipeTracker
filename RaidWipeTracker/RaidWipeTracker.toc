@@ -1,0 +1,33 @@
+## Interface: 120100
+## Title: RaidWipeTracker
+## Notes: 团本开荒人工灭团归因与统计 / Manual raid wipe attribution & progress stats
+## Author: 潇
+## Version: 0.2.2
+## SavedVariables: RaidWipeTrackerDB
+## IconTexture: Interface\Icons\Achievement_Boss_Illidan
+## AddonCompartmentFunc: RaidWipeTracker_OnCompartmentClick
+## AddonCompartmentFuncOnEnter: RaidWipeTracker_OnCompartmentEnter
+## AddonCompartmentFuncOnLeave: RaidWipeTracker_OnCompartmentLeave
+
+Constants.lua
+Util.lua
+Core.lua
+Database.lua
+Roster.lua
+Session.lua
+Tags.lua
+Encounter.lua
+Statistics.lua
+ChatReport.lua
+
+UI\Widgets.lua
+UI\WipeWindow.lua
+UI\MainWindow.lua
+UI\HistoryView.lua
+UI\StatsView.lua
+UI\SettingsView.lua
+UI\DebugView.lua
+UI\BossPicker.lua
+UI\FloatPanel.lua
+UI\MinimapButton.lua
+UI\OptionsPanel.lua
