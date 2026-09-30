@@ -243,9 +243,8 @@ function Instance:CreateSectionHeader(parent)
     hl:SetAllPoints()
     hl:SetColorTexture(1, 1, 1, 0.08)
     b:SetScript("OnClick", function(self)
-        if self.kind ~= "boss" or not self.encounterID then return end
-        local key = tostring(self.encounterID)
-        self.owner.expanded[key] = not self.owner.expanded[key]
+        if not self.expandKey then return end
+        self.owner.expanded[self.expandKey] = not self.owner.expanded[self.expandKey]
         self.owner:RefreshTags()
     end)
     return b
@@ -290,7 +289,7 @@ function Instance:BuildRight(f)
     hint:SetPoint("TOPLEFT", x, -30)
     hint:SetPoint("TOPRIGHT", -16, -30)
     hint:SetWordWrap(true)
-    hint:SetText("通用 tag 对所有首领显示。点首领名展开后可单独添加、排序、删除。删除不影响已保存的记录。")
+    hint:SetText("通用 tag 对所有首领显示。点团本名展开首领，再点首领名管理它的专属 tag。删除不影响已保存的记录。")
 
     local reset = Widgets.CreateButton(f, "恢复默认 tag", 110, 22, function()
         Widgets.Confirm("把通用 tag 恢复为默认列表？（首领专属 tag 和已保存的记录不受影响）", function()
@@ -369,15 +368,15 @@ function Instance:PlaceAddRow(encounterID, sectionKey, x, y, width)
     return y + TAG_ADD_H
 end
 
-function Instance:PlaceHeader(kind, encounterID, text, y, width)
+function Instance:PlaceHeader(kind, expandKey, text, x, y, width)
     local header = self.headerPool:Acquire()
     header.kind = kind
-    header.encounterID = encounterID
+    header.expandKey = expandKey
     header.owner = self
-    header:SetWidth(width)
+    header:SetWidth(math.max(width - x, 80))
     header.text:SetText(text)
-    header:EnableMouse(kind == "boss")
-    header:SetPoint("TOPLEFT", self.tagContent, "TOPLEFT", 0, -y)
+    header:EnableMouse(expandKey ~= nil)
+    header:SetPoint("TOPLEFT", self.tagContent, "TOPLEFT", x, -y)
     return y + TAG_SECTION_H
 end
 
@@ -402,34 +401,51 @@ function Instance:RefreshTags()
     self.tagContent:SetWidth(width)
     local y = 0
 
-    y = self:PlaceHeader("label", nil, "|cffffd100通用|r", y, width)
+    y = self:PlaceHeader("label", nil, "|cffffd100通用|r", 0, y, width)
     y = self:PlaceTagRows(RWT.Tags:GetPresets(), nil, 0, y, width)
     y = self:PlaceAddRow(nil, "general", 0, y, width) + 8
 
     local raids = self:GetRaids()
     if #raids == 0 then
-        y = self:PlaceHeader("label", nil, "|cff888888冒险指南未加载，暂时无法列出首领|r", y, width)
+        y = self:PlaceHeader("label", nil, "|cff888888冒险指南未加载，暂时无法列出首领|r", 0, y, width)
     else
+        local bossX, tagX = 16, 32
         for _, raid in ipairs(raids) do
-            y = self:PlaceHeader("raid", nil, "|cff888888" .. (raid.title or "?") .. "|r", y, width)
-            for _, boss in ipairs(raid.bosses or {}) do
+            local bosses = raid.bosses or {}
+            local tagCount = 0
+            for _, boss in ipairs(bosses) do
                 local id = boss.encounterID
-                local key = id and tostring(id) or nil
-                if not key or key == "" or key == "0" then
-                    y = self:PlaceHeader("label", nil, "|cff888888" .. (boss.bossName or "?") .. "|r", y, width)
-                else
-                    local tags = RWT.Tags:GetBossTags(id)
-                    local open = self.expanded[key] and true or false
-                    local arrow = open and "▼" or "▶"
-                    local title = string.format("%s %s|cff888888（%d）|r", arrow, boss.bossName or "?", #tags)
-                    y = self:PlaceHeader("boss", id, title, y, width)
-                    if open then
-                        y = self:PlaceTagRows(tags, id, 0, y, width)
-                        y = self:PlaceAddRow(id, key, 0, y, width)
+                if id and tostring(id) ~= "" and tostring(id) ~= "0" then
+                    tagCount = tagCount + #RWT.Tags:GetBossTags(id)
+                end
+            end
+            local raidKey = "raid:" .. tostring(raid.journalInstanceID or raid.title or "?")
+            local raidOpen = self.expanded[raidKey] and true or false
+            local raidArrow = raidOpen and "▼" or "▶"
+            local raidTitle = string.format("%s |cffffd100%s|r |cff888888（%d 首领，%d tag）|r",
+                raidArrow, raid.title or "?", #bosses, tagCount)
+            y = self:PlaceHeader("raid", raidKey, raidTitle, 0, y, width)
+            if raidOpen then
+                for _, boss in ipairs(bosses) do
+                    local id = boss.encounterID
+                    local key = id and tostring(id) or nil
+                    if not key or key == "" or key == "0" then
+                        y = self:PlaceHeader("label", nil, "|cff888888" .. (boss.bossName or "?") .. "|r", bossX, y, width)
+                    else
+                        local tags = RWT.Tags:GetBossTags(id)
+                        local bossKey = "boss:" .. key
+                        local open = self.expanded[bossKey] and true or false
+                        local arrow = open and "▼" or "▶"
+                        local title = string.format("%s %s|cff888888（%d）|r", arrow, boss.bossName or "?", #tags)
+                        y = self:PlaceHeader("boss", bossKey, title, bossX, y, width)
+                        if open then
+                            y = self:PlaceTagRows(tags, id, tagX, y, width - tagX)
+                            y = self:PlaceAddRow(id, key, tagX, y, width - tagX)
+                        end
                     end
                 end
             end
-            y = y + 6
+            y = y + 4
         end
     end
     self.tagContent:SetHeight(math.max(y, 1))
