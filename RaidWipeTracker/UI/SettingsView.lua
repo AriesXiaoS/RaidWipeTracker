@@ -461,7 +461,7 @@ end
 
 function Instance:Refresh()
     local s = S()
-    if s.reportTopN ~= 3 and s.reportTopN ~= 5 then s.reportTopN = 5 end
+    if s.reportTopN ~= 3 and s.reportTopN ~= 5 then s.reportTopN = 3 end
     for _, b in ipairs(self.topNButtons) do b:SetSelected(b.value == s.reportTopN) end
     for _, b in ipairs(self.channelButtons) do b:SetSelected(b.value == s.reportChannel) end
     if not self.reportIntervalBox:HasFocus() then

@@ -39,7 +39,8 @@ local function ShowRealm()
     return RWT.db.settings.reportShowRealm and true or false
 end
 
--- 1.名字 5次（吃地板×3 漏断×2），原因按次数从高到低。forChat 时转义管道符。
+-- 1.名字 5次（吃地板×3 漏断×2），原因按次数从高到低。
+-- forChat 时转义管道符，人名保持纯文本：频道消息里的颜色码会被服务器丢弃整行。
 local function FormatPlayer(index, rec, showRealm, forChat)
     local function Safe(text)
         text = text or ""
@@ -51,7 +52,8 @@ local function FormatPlayer(index, rec, showRealm, forChat)
         table.insert(parts, string.format("%s×%d", Safe(item.key), item.count))
     end
     local tags = #parts > 0 and ("（" .. table.concat(parts, " ") .. "）") or ""
-    local name = Util.ColorizeByClass(Safe(Util.ReportName(rec.name, showRealm)), rec.class)
+    local name = Safe(Util.ReportName(rec.name, showRealm))
+    if not forChat then name = Util.ColorizeByClass(name, rec.class) end
     return string.format("%d.%s %d次%s", index, name, rec.count, tags)
 end
 
@@ -112,7 +114,7 @@ function ChatReport:BuildRecordMessages(players)
     local maxBytes = RWT.CHAT_MAX_BYTES
     local messages = {}
     for _, player in ipairs(players or {}) do
-        local name = Util.ColorizeByClass(Util.EscapeChat(Util.ReportName(player.name, showRealm)), player.class)
+        local name = Util.EscapeChat(Util.ReportName(player.name, showRealm))
         local parts = {}
         for _, tag in ipairs(player.tags or {}) do
             local text = Util.EscapeChat(tag)

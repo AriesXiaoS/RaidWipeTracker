@@ -1,5 +1,8 @@
 local addonName, RWT = ...
 
+-- 插件列表、收纳按钮、小地图和主窗口共用。客户端只认 TGA / BLP。
+RWT.LOGO = "Interface\\AddOns\\" .. addonName .. "\\Media\\logo.tga"
+
 -- 数据库结构版本。修改 SavedVariables 结构时 +1，并在 Database.migrations 中添加迁移函数。
 RWT.DB_VERSION = 5
 
@@ -62,7 +65,7 @@ RWT.DEFAULT_SETTINGS = {
     bossTags = {}, -- encounterID（字符串）-> 该首领专属预设 tag
     minimap = { hide = false, angle = 225 },
     floatPanel = { enabled = false, locked = false },
-    reportTopN = 5, -- 3 / 5
+    reportTopN = 3, -- 3 / 5
     reportChannel = "RAID",
     reportInterval = 0.6, -- 统计报告逐条发送间隔（秒）
     reportShowRealm = false, -- 汇报人名是否带服务器后缀

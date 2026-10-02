@@ -111,25 +111,13 @@ local function CreateSelectedRow(parent)
         b:SetScript("OnEnter", function(self)
             if self.kind == "preset" then return end
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
-            local _, pull = GetTarget()
-            local bossPreset = pull and pull.encounterID
             if self.kind == "session" then
                 GameTooltip:SetText("临时 tag（本次登录保留）")
                 GameTooltip:AddLine("左键：给该玩家加上或取消", 1, 1, 1)
-                GameTooltip:AddLine("右键：从本次登录中删除", 1, 1, 1)
-                if bossPreset then
-                    GameTooltip:AddLine("Shift+右键：设为该首领的预设 tag", 1, 1, 1)
-                else
-                    GameTooltip:AddLine("Shift+右键：设为通用预设 tag", 1, 1, 1)
-                end
+                GameTooltip:AddLine("右键：删除这个临时 tag", 1, 1, 1)
             else
                 GameTooltip:SetText("临时 tag")
-                GameTooltip:AddLine("左键：移除", 1, 1, 1)
-                if bossPreset then
-                    GameTooltip:AddLine("右键：设为该首领的预设 tag", 1, 1, 1)
-                else
-                    GameTooltip:AddLine("右键：设为通用预设 tag", 1, 1, 1)
-                end
+                GameTooltip:AddLine("左键或右键：删除", 1, 1, 1)
             end
             GameTooltip:Show()
         end)
@@ -245,8 +233,15 @@ local function CreateFrameOnce()
     skip:SetPoint("RIGHT", cancel, "LEFT", -8, 0)
     local save = Widgets.CreateButton(frame, "保存", 110, 26, function() WipeWindow:Save() end)
     save:SetPoint("RIGHT", skip, "LEFT", -8, 0)
+    frame.reportToggle = Widgets.CreateToggle(frame, 168, 26, "LEFT")
+    frame.reportToggle:SetPoint("RIGHT", save, "LEFT", -8, 0)
+    frame.reportToggle:SetScript("OnClick", function()
+        RWT.db.settings.recordChat = not RWT.db.settings.recordChat
+        RWT:NotifyDataChanged()
+    end)
     frame.hint = Widgets.CreateText(frame, "GameFontDisableSmall")
     frame.hint:SetPoint("BOTTOMLEFT", 16, 20)
+    frame.hint:SetWidth(360)
     frame.hint:SetText("关闭窗口 = 暂存为待填写；取消 = 放弃本次修改；跳过 = 无责任人")
 
     -- 关闭（X / ESC）时暂存到待填写的 Pull，不丢数据
@@ -363,13 +358,13 @@ function WipeWindow:BindRow(row, entry, index)
                 b:SetBackdropColor(0.1, 0.35, 0.55, 0.85)
                 b:SetBackdropBorderColor(0.4, 0.8, 1, 1)
             else
-                b:SetBackdropColor(0.08, 0.18, 0.28, 0.9)
+                b:SetBackdropColor(0, 0, 0, 0)
                 b:SetBackdropBorderColor(0.35, 0.65, 0.85, 1)
             end
         else
             b:SetLabel(tag .. "  ×", 0.45, 0.85, 1)
-            b:SetSelected(false)
-            b:SetBackdropColor(0.1, 0.3, 0.45, 0.7)
+            b:SetSelected(true)
+            b:SetBackdropColor(0.1, 0.35, 0.55, 0.85)
             b:SetBackdropBorderColor(0.4, 0.8, 1, 1)
         end
         Widgets.SizeToText(b, TAG_MIN_W, TAG_MAX_W)
@@ -405,12 +400,6 @@ function WipeWindow:BindRow(row, entry, index)
     row:SetHeight(inputY + 30)
 end
 
-local function PromoteTag(tag, encounterID)
-    local ok, err = RWT.Tags:Promote(tag, encounterID)
-    if not ok then RWT:Print(err or "无法设为预设 tag") end
-    RWT:NotifyDataChanged()
-end
-
 -- 预设与登录临时 tag：左键切换该玩家是否带上
 local function TogglePlayerTag(entry, tag)
     if not RWT.Tags.IndexOf(entry.tags, tag) and #entry.tags >= RWT.MAX_TAGS_PER_PLAYER then
@@ -420,28 +409,30 @@ local function TogglePlayerTag(entry, tag)
     RWT.Tags.Toggle(entry.tags, tag)
 end
 
--- 预设：左键切换。登录临时 tag：左键切换，右键从本次登录删除，Shift+右键设为预设。
--- 仅本条记录的临时 tag：左键移除，右键设为预设
+-- 从当前这条记录的所有玩家身上拿掉这个 tag
+local function RemoveTagFromDraft(tag)
+    local draft = GetDraft()
+    if not draft then return end
+    for _, entry in ipairs(draft.players) do
+        local i = RWT.Tags.IndexOf(entry.tags, tag)
+        if i then table.remove(entry.tags, i) end
+    end
+end
+
+-- 预设：左键切换。登录临时 tag：左键切换，右键一次删掉（登录列表和已选玩家一起清）。
+-- 仅本条记录的临时 tag：左键或右键都从该玩家身上删除
 function WipeWindow:OnTagClicked(row, button, mouseButton)
     local entry = row.entry
     if not entry then return end
-    local _, pull = GetTarget()
-    local encounterID = pull and pull.encounterID
     if button.kind == "preset" then
         TogglePlayerTag(entry, button.tag)
     elseif button.kind == "session" then
         if mouseButton == "RightButton" then
-            if IsShiftKeyDown() then
-                PromoteTag(button.tag, encounterID)
-                return
-            end
             RWT.Tags:Forget(button.tag)
+            RemoveTagFromDraft(button.tag)
         else
             TogglePlayerTag(entry, button.tag)
         end
-    elseif mouseButton == "RightButton" then
-        PromoteTag(button.tag, encounterID)
-        return
     else
         local i = RWT.Tags.IndexOf(entry.tags, button.tag)
         if i then table.remove(entry.tags, i) end
@@ -484,6 +475,9 @@ function WipeWindow:Render()
     self:RenderBanner(session, pull)
     self:RenderRoster(pull)
     self:RenderSelected()
+    local reportOn = RWT.db.settings.recordChat and true or false
+    frame.reportToggle:SetLabel((reportOn and "|cff40ff40[开]|r " or "|cff888888[关]|r ") .. "保存后发送通报")
+    frame.reportToggle:SetSelected(reportOn)
     local draft = GetDraft()
     if frame.noteBox:GetText() ~= (draft.note or "") then frame.noteBox:SetText(draft.note or "") end
 

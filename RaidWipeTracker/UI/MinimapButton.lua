@@ -4,7 +4,7 @@ local addonName, RWT = ...
 local MinimapButton = RWT:NewModule("MinimapButton")
 RWT.UI.MinimapButton = MinimapButton
 
-local ICON = "Interface\\Icons\\Achievement_Boss_Illidan"
+local ICON = RWT.LOGO
 local RADIUS_OFFSET = 10 -- 按钮中心在小地图边缘外侧的距离
 
 local button
@@ -77,7 +77,6 @@ local function CreateButton()
     icon:SetTexture(ICON)
     icon:SetSize(20, 20)
     icon:SetPoint("TOPLEFT", 7, -5)
-    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 
     local border = b:CreateTexture(nil, "OVERLAY")
     border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")

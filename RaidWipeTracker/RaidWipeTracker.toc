@@ -1,10 +1,11 @@
 ## Interface: 120100
 ## Title: RaidWipeTracker
 ## Notes: 团本开荒人工灭团归因与统计 / Manual raid wipe attribution & progress stats
-## Author: 潇
-## Version: 0.2.2
+## Author: 伐竹取道
+## Version: 0.2.3
+## X-License: 版权所有。禁止去掉作者信息后传播修改版。详见 LICENSE
 ## SavedVariables: RaidWipeTrackerDB
-## IconTexture: Interface\Icons\Achievement_Boss_Illidan
+## IconTexture: Interface\AddOns\RaidWipeTracker\Media\logo.tga
 ## AddonCompartmentFunc: RaidWipeTracker_OnCompartmentClick
 ## AddonCompartmentFuncOnEnter: RaidWipeTracker_OnCompartmentEnter
 ## AddonCompartmentFuncOnLeave: RaidWipeTracker_OnCompartmentLeave

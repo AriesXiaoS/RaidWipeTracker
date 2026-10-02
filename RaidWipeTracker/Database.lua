@@ -206,7 +206,7 @@ local function Sanitize(db)
     end
     db.settings.bossTags = SanitizeBossTags(db.settings.bossTags)
     if db.settings.reportTopN ~= 3 and db.settings.reportTopN ~= 5 then
-        db.settings.reportTopN = 5
+        db.settings.reportTopN = 3
     end
     local settings = db.settings
     settings.reportChannel = SanitizeChannel(settings.reportChannel)

@@ -28,6 +28,12 @@ end
 local function CreateFrameOnce()
     if frame then return frame end
     frame = Widgets.CreateWindow("RaidWipeTrackerMainWindow", WIDTH, HEIGHT, "MEDIUM")
+    local logo = frame:CreateTexture(nil, "ARTWORK")
+    logo:SetTexture(RWT.LOGO)
+    logo:SetSize(24, 24)
+    logo:SetPoint("TOPLEFT", 12, -8)
+    frame.title:ClearAllPoints()
+    frame.title:SetPoint("LEFT", logo, "RIGHT", 6, 0)
     frame.title:SetText("RaidWipeTracker  |cff888888" .. RWT.version .. "|r")
 
     frame.tabButtons = {}
